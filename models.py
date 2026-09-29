@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Date, Numeric, Text, ForeignKey,
 from sqlalchemy.orm import relationship
 from database import Base
 
-# Связующая таблица для отношения N:M между договорами и имуществом[cite: 4]
+# Связующая таблица для отношения N:M между договорами и имуществом
 contract_property_link = Table(
     'contract_property_link',
     Base.metadata,
@@ -73,7 +73,7 @@ class InsuranceContract(Base):
     product = relationship("InsuranceProduct", back_populates="contracts")
     claims = relationship("InsuranceClaim", back_populates="contract")
 
-    # Отношение N:M с имуществом[cite: 4]
+    # Отношение N:M с имуществом
     properties = relationship("InsuredProperty", secondary=contract_property_link)
 
 

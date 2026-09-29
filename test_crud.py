@@ -3,6 +3,7 @@ from database import engine, SessionLocal, Base
 from models import Client, Agent, InsuranceProduct, ClaimStatus, InsuredProperty, InsuranceContract, InsuranceClaim
 
 # 1. Создание всех таблиц в БД (если не используется Alembic)
+Base.metadata.drop_all(bind=engine)    # удаляем, чтоб была некоторая деятельность
 Base.metadata.create_all(bind=engine)
 
 
@@ -15,7 +16,7 @@ def run_test():
     status_approved = ClaimStatus(status_name="Одобрено")
     db.add_all([status_new, status_approved])
 
-    # Создание клиента и агента[cite: 4]
+    # Создание клиента и агента
     client = Client(full_name="Иванов Иван", date_of_birth=date(1990, 1, 1), passport_info="1234 567890",
                     contact_phone="+79991234567")
     agent = Agent(full_name="Петров Петр", position="Старший агент", department="Отдел продаж")
@@ -25,12 +26,12 @@ def run_test():
     db.add_all([client, agent, product])
     db.commit()
 
-    # Создание имущества[cite: 4]
+    # Создание имущества
     property1 = InsuredProperty(property_type="Автомобиль", market_value=1500000, description="Toyota Camry")
     db.add(property1)
     db.commit()
 
-    # Создание договора и привязка имущества (Связь N:M)[cite: 4]
+    # Создание договора и привязка имущества (Связь N:M)
     contract = InsuranceContract(
         client_id=client.id,
         agent_id=agent.id,
@@ -43,7 +44,7 @@ def run_test():
     db.add(contract)
     db.commit()
 
-    # Регистрация страхового случая[cite: 4]
+    # Регистрация страхового случая
     claim = InsuranceClaim(
         contract_id=contract.id,
         status_id=status_new.id,
@@ -64,12 +65,12 @@ def run_test():
         for p in c.properties:
             print(f"  Застрахованное имущество: {p.description}")
 
-    # Фильтрация страховых случаев по статусу[cite: 4]
+    # Фильтрация страховых случаев по статусу
     claims = db.query(InsuranceClaim).join(ClaimStatus).filter(ClaimStatus.status_name == "Новая").all()
     print(f"Количество новых заявок: {len(claims)}")
 
     print("\n--- 3. Обновление данных (UPDATE) ---")
-    # Агент меняет статус заявки[cite: 4]
+    # Агент меняет статус заявки
     claim_to_update = db.query(InsuranceClaim).first()
     approved_status = db.query(ClaimStatus).filter(ClaimStatus.status_name == "Одобрено").first()
     claim_to_update.status_id = approved_status.id
