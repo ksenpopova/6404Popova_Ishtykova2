@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Строка подключения к PostgreSQL (замените логин/пароль на свои)
+# Строка подключения к PostgreSQL
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:1234@localhost:5432/insurance_db"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
