@@ -2,7 +2,7 @@ from datetime import date, datetime
 from database import engine, SessionLocal, Base
 from models import Client, Agent, InsuranceProduct, ClaimStatus, InsuredProperty, InsuranceContract, InsuranceClaim
 
-# 1. Создание всех таблиц в БД (если не используется Alembic)
+# 1. Создание всех таблиц в БД
 Base.metadata.drop_all(bind=engine)    # удаляем, чтоб была некоторая деятельность
 Base.metadata.create_all(bind=engine)
 
