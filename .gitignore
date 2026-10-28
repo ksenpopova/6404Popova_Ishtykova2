@@ -1,5 +1,6 @@
 .venv
 .idea
+__pycache__/
 ЛР1_Талмуд2часть.md
 ЛР0_Техсп.docx
 README.md
