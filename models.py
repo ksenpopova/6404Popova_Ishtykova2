@@ -31,6 +31,22 @@ class Agent(Base):
 
     contracts = relationship("InsuranceContract", back_populates="agent")
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    profile = relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profile"
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    role = Column(String, nullable=False)
+    client_id = Column(Integer, ForeignKey("client.id"), unique=True)
+    agent_id = Column(Integer, ForeignKey("agent.id"), unique=True)
+    user = relationship("User", back_populates="profile")
 
 class InsuranceProduct(Base):
     __tablename__ = 'insurance_product'

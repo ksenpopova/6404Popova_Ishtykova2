@@ -1,5 +1,7 @@
-from datetime import datetime, timedelta
-from passlib.context import CryptContext
+from datetime import datetime, timedelta, timezone
+import os
+import secrets
+import bcrypt
 import jwt
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
@@ -9,25 +11,30 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 
-SECRET_KEY = "super_secret_insurance_key_2026"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY") or secrets.token_urlsafe(32)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    raw = password.encode("utf-8")
+    if len(raw) > 72:
+        raise ValueError("Пароль не должен превышать 72 байта UTF-8")
+    return bcrypt.hashpw(raw, bcrypt.gensalt()).decode("utf-8")
 
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -41,22 +48,23 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
+        username = payload.get("sub")
+        if not isinstance(username, str) or not username:
             raise credentials_exception
     except jwt.PyJWTError:
         raise credentials_exception
 
-    # Делаем запрос к БД для поиска пользователя.
-    # Если пользователи в вашей системе — это Агенты, используйте models.Agent
-    # Если вы создали отдельную таблицу для системных пользователей, используйте models.User
-    user = db.query(models.Agent).filter(models.Agent.full_name == username).first()
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if user is None or user.profile is None:
+        raise credentials_exception
+    profile = user.profile
+    if not ((profile.role == "client" and profile.client_id is not None and profile.agent_id is None)
+            or (profile.role == "agent" and profile.agent_id is not None and profile.client_id is None)):
+        raise credentials_exception
+    return user
 
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден в базе данных"
-        )
 
-    # Теперь функция возвращает полноценный объект из базы данных, а не просто строку
+def require_agent(user: models.User = Depends(get_current_user)):
+    if user.profile.role != "agent":
+        raise HTTPException(status_code=403, detail="Доступ разрешён только агенту")
     return user
