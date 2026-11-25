@@ -154,7 +154,7 @@ class UserOutAuth(BaseModel):
     id: int
     username: str
     role: str
-    model_config = {"from_attributes": True}
+    #model_config = {"from_attributes": True}
 
 class Token(BaseModel):
     access_token: str

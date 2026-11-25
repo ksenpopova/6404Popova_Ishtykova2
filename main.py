@@ -4,9 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 # Импорт ваших настроек БД
 from database import engine
 import models
+from recommendations.client import recommendation_lifespan
 
 # Импорт всех роутеров
-from routers import auth, clients, claims, agents, contracts, products, properties
+from routers import auth, clients, claims, agents, contracts, products, properties, recommendations
 
 # Автоматическое создание таблиц в БД
 models.Base.metadata.create_all(bind=engine)
@@ -15,7 +16,8 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Insurance System API",
     description="REST API для управления распределенной системой страховой компании",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=recommendation_lifespan,
 )
 
 # Настройка CORS
@@ -30,6 +32,7 @@ app.add_middleware(
 # Подключение всех роутеров
 app.include_router(auth.router, prefix="/auth", tags=["Аутентификация"])
 app.include_router(clients.router, prefix="/clients", tags=["Клиенты"])
+app.include_router(recommendations.router, prefix="/clients", tags=["Рекомендации"])
 app.include_router(claims.router, prefix="/claims", tags=["Страховые случаи"])
 app.include_router(agents.router, prefix="/agents", tags=["Агенты"])
 app.include_router(contracts.router, prefix="/contracts", tags=["Договоры"])

@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package insurance.recommendations.v1;
+
+service RecommendationService {
+  rpc Recommend(RecommendRequest) returns (RecommendResponse);
+  rpc StreamRecommendations(StreamRecommendationsRequest) returns (stream Recommendation);
+}
+
+message ContractHistory {
+  int32 product_id = 1;
+  string insurance_type = 2;
+  optional string contract_date = 3; // YYYY-MM-DD, календарная дата без времени.
+}
+
+message Product {
+  int32 product_id = 1;
+  string name = 2;
+  string insurance_type = 3;
+  optional int64 tariff_basis_points = 4; // 550 означает тариф 5.50%.
+}
+
+message RecommendRequest {
+  repeated ContractHistory history = 1;
+  repeated Product catalog = 2;
+  optional uint32 limit = 3; // По умолчанию 5, допустимо от 1 до 20.
+}
+
+message RecommendResponse {
+  repeated Recommendation items = 1;
+}
+
+message StreamRecommendationsRequest {
+  RecommendRequest query = 1;
+  uint32 delay_ms = 2; // Пауза между сообщениями для демонстрации, от 0 до 1000.
+}
+
+message Recommendation {
+  Product product = 1;
+  uint32 matching_contracts = 2;
+  optional string latest_matching_contract_date = 3;
+}
